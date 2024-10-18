@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lecturerapplication.R
 
-class PeerListAdapter(private val peerHandler:PeerListAdapterInterface): RecyclerView.Adapter<PeerListAdapter.ViewHolder>() {
+class PeerListAdapter: RecyclerView.Adapter<PeerListAdapter.ViewHolder>() {
     private val peersList:MutableList<WifiP2pDevice> = mutableListOf()
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
@@ -27,10 +27,6 @@ class PeerListAdapter(private val peerHandler:PeerListAdapterInterface): Recycle
 
         holder.peer.text = peer.deviceName
         //holder.descriptionTextView.text = peer.deviceAddress
-
-        holder.itemView.setOnClickListener {
-            peerHandler.onPeerClicked(peer)
-        }
     }
 
     override fun getItemCount(): Int {

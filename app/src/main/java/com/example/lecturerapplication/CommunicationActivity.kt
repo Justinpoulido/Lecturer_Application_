@@ -32,8 +32,9 @@ import com.example.lecturerapplication.chatlist.ChatListAdapter
 import com.example.lecturerapplication.models.ChatContentModel
 import com.example.lecturerapplication.network.NetworkMessageInterface
 import com.example.lecturerapplication.network.Server
+import org.w3c.dom.Text
 
-class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerListAdapterInterface, NetworkMessageInterface {
+class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkMessageInterface {
     private var wfdManager: WifiDirectManager? = null
     private var peerListAdapter:PeerListAdapter? = null
     private var chatListAdapter:ChatListAdapter? = null
@@ -43,7 +44,9 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
     private var wfdHasConnection = false
     private var hasAttendees = false
     private var hasDevices = false
-    private lateinit var rvAttendees: RecyclerView
+    private lateinit var attendeesView: RecyclerView
+    private lateinit var chatView : RecyclerView
+    private lateinit var classText : CharSequence
 
     private var deviceIp : String = ""
     private var studentID : String = ""
@@ -76,15 +79,18 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         val channel = manager.initialize(this, mainLooper, null)
         wfdManager = WifiDirectManager(manager, channel, this)
 
-        peerListAdapter = PeerListAdapter(this)
-        rvAttendees = findViewById(R.id.rvAttendees)
-        rvAttendees.adapter = peerListAdapter
-        rvAttendees.layoutManager = LinearLayoutManager(this)
 
+        attendeesView = findViewById(R.id.rvAttendees)
+        peerListAdapter = PeerListAdapter()
+        attendeesView.adapter = peerListAdapter
+        attendeesView.layoutManager = LinearLayoutManager(this)
+
+        chatView = findViewById(R.id.rvChat)
         chatListAdapter = ChatListAdapter()
-        val chat: RecyclerView = findViewById(R.id.rvChat)
-        chat.adapter = chatListAdapter
-        chat.layoutManager = LinearLayoutManager(this)
+        chatView.adapter = chatListAdapter
+        chatView.layoutManager = LinearLayoutManager(this)
+
+        classText = findViewById<TextView>(R.id.tvClassName).text
     }
 
     fun startClass(view: View){
@@ -153,26 +159,28 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         } else {
             text = "Group has been formed"
             Log.e("WFDManager", "group is formed")
-            val className = groupInfo.networkName
-            findViewById<TextView>(R.id.tvClassName).text = className
+            //val className = groupInfo.networkName
+            //findViewById<TextView>(R.id.tvClassName).text = className
+            classText = groupInfo.networkName
             chatListAdapter?.setGroupInfo(groupInfo)
-            val attendeesList = groupInfo.clientList.toList()
-            peerListAdapter?.updateList(attendeesList)
+        }
+
+        if (groupInfo == null){
+            server?.close()
+        } else if (groupInfo.isGroupOwner && server == null){
+            server = Server(this)
+            deviceIp = server!!.serverIp
         }
 
         var toast = Toast.makeText(this, text , Toast.LENGTH_SHORT)
         toast.show()
         wfdHasConnection = groupInfo != null
-        updateUI()
+        //updateUI()
     }
 
     override fun onDeviceStatusChanged(thisDevice: WifiP2pDevice) {
         val toast = Toast.makeText(this, "Device parameters have been updated" , Toast.LENGTH_SHORT)
         toast.show()
-    }
-
-    override fun onPeerClicked(peer: WifiP2pDevice) {
-        wfdManager?.connectToPeer(peer)
     }
 
     private fun updateUI() {

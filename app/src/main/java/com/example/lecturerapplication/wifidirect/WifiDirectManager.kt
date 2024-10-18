@@ -33,12 +33,12 @@ class WifiDirectManager(
                 Log.e("WFDManager","The WiFi direct adapter state has changed to $isWifiP2pEnabled")
             }
 
-            WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION -> {
+            /*WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION -> {
                 manager.requestPeers(channel) { peers: WifiP2pDeviceList? ->
                     peers?.deviceList?.let { wfdHandler.onPeerListUpdated(it) }
                     Log.e("WFDManager","The peer listing has changed")
                 }
-            }
+            }*/
 
 
             WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> {
@@ -61,6 +61,7 @@ class WifiDirectManager(
                 groupInfo?.let {
                     if (it.clientList.isNotEmpty()) {
                         wfdHandler.onConnectedListUpdated(it.clientList)
+                        Log.e("WFDManager", "The group has devices")
                     }
                 }
             }
