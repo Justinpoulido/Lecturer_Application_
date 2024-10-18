@@ -61,7 +61,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, PeerList
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(R.layout.activity_communication)
-        // Initialize the input field and button
+
         btnStartClass = findViewById(R.id.btnStartClass)
         btnStartClass.setOnClickListener { view ->
             startClass(view)
