@@ -52,6 +52,12 @@ class WifiDirectManager(
                     Build.VERSION.SDK_INT >= 33 -> intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_GROUP, WifiP2pGroup::class.java)!!
                     else -> @Suppress("DEPRECATION") intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_GROUP)!!
                 }
+
+                if (tmpGroupInfo == null){
+                    Log.e("WFDManager", "no group connection established")
+                    wfdHandler.onGroupStatusChanged(groupInfo,wifiP2pInfo)
+                }
+
                 if (groupInfo != tmpGroupInfo) {
                     groupInfo = tmpGroupInfo
                     groupInfo?.let {

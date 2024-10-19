@@ -162,16 +162,20 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
             Log.e("WFDManager", "group is formed")
             val className = groupInfo.networkName
             findViewById<TextView>(R.id.tvClassName).text = className
-            //classText = groupInfo.networkName
             chatListAdapter?.setGroupInfo(groupInfo)
         }
 
-        /*if (groupInfo == null){
+        if (groupInfo == null){
             server?.close()
         } else if (groupInfo.isGroupOwner && server == null){
             server = Server(this)
             deviceIp = server!!.serverIp
-        }*/
+            if (server != null) {
+                Log.e("WFDManager", "server established")
+            } else {
+                Log.e("WFDManager", "server NOT established")
+            }
+        }
 
         var toast = Toast.makeText(this, text , Toast.LENGTH_SHORT)
         toast.show()
