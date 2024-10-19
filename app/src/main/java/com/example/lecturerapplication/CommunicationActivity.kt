@@ -32,6 +32,7 @@ import com.example.lecturerapplication.chatlist.ChatListAdapter
 import com.example.lecturerapplication.models.ChatContentModel
 import com.example.lecturerapplication.network.NetworkMessageInterface
 import com.example.lecturerapplication.network.Server
+import kotlin.concurrent.thread
 import org.w3c.dom.Text
 
 class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkMessageInterface {
@@ -47,11 +48,11 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
     private lateinit var attendeesView: RecyclerView
     private lateinit var chatView : RecyclerView
 
-    private var deviceIp : String = ""
+    private var deviceIp : String = " "
     private var studentID : String = ""
 
     private lateinit var btnStartClass : Button
-
+    private lateinit var btnEndCurrentClass : Button
 
     private val intentFilter = IntentFilter().apply {
         addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)
@@ -70,6 +71,9 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
         btnStartClass.setOnClickListener { view ->
             startClass(view)
         }
+
+        btnEndCurrentClass = findViewById(R.id.btnEndCurrentClass)
+
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -156,26 +160,26 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
 
         if (groupInfo == null){
             text = "Group is not formed"
-            Log.e("WFDManager", "group is not formed")
+            //Log.e("WFDManager", "group is not formed")
+            //server?.close()
         } else {
             text = "Group has been formed"
-            Log.e("WFDManager", "group is formed")
+            //Log.e("WFDManager", "group has formed")
             val className = groupInfo.networkName
             findViewById<TextView>(R.id.tvClassName).text = className
             chatListAdapter?.setGroupInfo(groupInfo)
         }
 
-        if (groupInfo == null){
-            server?.close()
+        /*if (groupInfo == null){
+                server?.close()
+                server = null
         } else if (groupInfo.isGroupOwner && server == null){
-            server = Server(this)
-            deviceIp = server!!.serverIp
-            if (server != null) {
-                Log.e("WFDManager", "server established")
-            } else {
-                Log.e("WFDManager", "server NOT established")
+            thread {
+                server = Server(this)
+                deviceIp = server!!.serverIp
+                Log.d("WFDManager", deviceIp)
             }
-        }
+        }*/
 
         var toast = Toast.makeText(this, text , Toast.LENGTH_SHORT)
         toast.show()

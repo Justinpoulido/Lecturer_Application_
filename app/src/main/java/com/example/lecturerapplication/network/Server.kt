@@ -3,9 +3,12 @@ package com.example.lecturerapplication.network
 import android.util.Log
 import com.google.gson.Gson
 import com.example.lecturerapplication.models.ChatContentModel
+import java.net.Inet4Address
 import java.net.InetAddress
+import java.net.NetworkInterface
 import java.net.ServerSocket
 import java.net.Socket
+import java.net.SocketException
 import kotlin.Exception
 import kotlin.concurrent.thread
 
@@ -14,23 +17,53 @@ class Server (
 
 
     companion object {
-        const val PORT: Int = 9999
+        const val PORT: Int = 10009
     }
-    private var svrSocket: ServerSocket = ServerSocket(PORT, 0, InetAddress.getLocalHost())
+    var serverIp: String = getLocalIpAddress()
+    private var svrSocket: ServerSocket = ServerSocket(PORT, 0, InetAddress.getByName(serverIp))
     private var clientMap: HashMap<String, Socket> = HashMap()
-    var serverIp: String = InetAddress.getLocalHost().hostAddress!!
+    private val serverThread: Thread
 
-    init {
-        thread{
-            while(true){
-                try{
+    /*init {
+        Log.e("WFDManager", "Server initialized on IP: $serverIp, Port: $PORT")
+        thread {
+            while (true) {
+                try {
+                    Log.e("WFDManager", "Waiting for client connection...")
                     val clientConnectionSocket = svrSocket.accept()
-                    Log.e("SERVER", "The server has accepted a connection: ")
+                    Log.e("WFDManager", "The server has accepted a connection from: ${clientConnectionSocket.inetAddress.hostAddress}")
+
+                    // Handle the new client connection
                     handleSocket(clientConnectionSocket)
 
-                }catch (e: Exception){
-                    Log.e("SERVER", "An error has occurred in the server!")
+                } catch (e: Exception) {
+                    Log.e("WFDManager", "An error has occurred in the server while accepting connections: ${e.message}")
                     e.printStackTrace()
+                }
+            }
+        }
+    }*/
+
+    init {
+        // Initialize and start the server thread
+        serverThread = thread {
+            while (!svrSocket.isClosed) {
+                try {
+                    Log.e("WFDManager", "Waiting for client connection...")
+                    // This line will block until a client connects or the socket is closed
+                    val clientConnectionSocket = svrSocket.accept()
+                    Log.e("WFDManager", "The server has accepted a connection from: ${clientConnectionSocket.inetAddress.hostAddress}")
+                    // Handle the new client connection
+                    handleSocket(clientConnectionSocket)
+
+                } catch (e: SocketException) {
+                    if (svrSocket.isClosed) {
+                        Log.e("WFDManager", "Server socket closed.")
+                    } else {
+                        Log.e("WFDManager", "An error has occurred in the server while accepting connections: ${e.message}")
+                    }
+                } catch (e: Exception) {
+                    Log.e("WFDManager", "An unexpected error has occurred: ${e.message}")
                 }
             }
         }
@@ -101,6 +134,31 @@ class Server (
     fun close(){
         svrSocket.close()
         clientMap.clear()
+    }
+
+    fun getLocalIpAddress(): String {
+        try {
+            // Get all network interfaces
+            val interfaces = NetworkInterface.getNetworkInterfaces()
+            while (interfaces.hasMoreElements()) {
+                val networkInterface = interfaces.nextElement()
+
+                // Filter out loopback and inactive interfaces
+                if (!networkInterface.isLoopback && networkInterface.isUp) {
+                    val addresses = networkInterface.inetAddresses
+                    while (addresses.hasMoreElements()) {
+                        val address = addresses.nextElement()
+                        // Check for IPv4 address
+                        if (address is Inet4Address) {
+                            return address.hostAddress
+                        }
+                    }
+                }
+            }
+        } catch (e: SocketException) {
+            e.printStackTrace()
+        }
+        return "0.0.0.0" // Default value if no IP found
     }
 
 }

@@ -53,23 +53,28 @@ class WifiDirectManager(
                     else -> @Suppress("DEPRECATION") intent.getParcelableExtra(WifiP2pManager.EXTRA_WIFI_P2P_GROUP)!!
                 }
 
-                if (tmpGroupInfo == null){
-                    Log.e("WFDManager", "no group connection established")
-                    wfdHandler.onGroupStatusChanged(groupInfo,wifiP2pInfo)
-                }
-
                 if (groupInfo != tmpGroupInfo) {
                     groupInfo = tmpGroupInfo
-                    groupInfo?.let {
-                        if (it.clientList.isNotEmpty()) {
-                            wfdHandler.onConnectedListUpdated(it.clientList)
-                            Log.e("WFDManager", "The group has devices")
-                        }
-                    }
                     Log.e("WFDManager", "The group status has changed")
                     wfdHandler.onGroupStatusChanged(groupInfo,wifiP2pInfo)
                 }
+
+                if (groupInfo != null) {
+                    if (groupInfo!!.clientList.isNotEmpty()) {
+                        wfdHandler.onConnectedListUpdated(groupInfo!!.clientList)
+                        Log.e("WFDManager", "The group has devices")
+                    }
+                    wfdHandler.onConnectedListUpdated(groupInfo!!.clientList)
+                }
+
+                /*if (tmpGroupInfo == null){
+                    //Log.e("WFDManager", "no group connection established")
+                    wfdHandler.onGroupStatusChanged(groupInfo,wifiP2pInfo)
+                }*/
+
+
             }
+
 
             WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION -> {
                 val thisDevice = when{
