@@ -46,12 +46,12 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
     private var hasDevices = false
     private lateinit var attendeesView: RecyclerView
     private lateinit var chatView : RecyclerView
-    private lateinit var classText : CharSequence
 
     private var deviceIp : String = ""
     private var studentID : String = ""
 
     private lateinit var btnStartClass : Button
+
 
     private val intentFilter = IntentFilter().apply {
         addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)
@@ -65,6 +65,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
         enableEdgeToEdge()
         setContentView(R.layout.activity_communication)
 
+
         btnStartClass = findViewById(R.id.btnStartClass)
         btnStartClass.setOnClickListener { view ->
             startClass(view)
@@ -75,7 +76,8 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
         }
-        val manager: WifiP2pManager = getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+        val manager: WifiP2pManager =
+            getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
         val channel = manager.initialize(this, mainLooper, null)
         wfdManager = WifiDirectManager(manager, channel, this)
 
@@ -89,8 +91,6 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
         chatListAdapter = ChatListAdapter()
         chatView.adapter = chatListAdapter
         chatView.layoutManager = LinearLayoutManager(this)
-
-        classText = findViewById<TextView>(R.id.tvClassName).text
     }
 
     fun startClass(view: View){
@@ -107,6 +107,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
             registerReceiver(it, intentFilter)
         }
     }
+
 
     override fun onPause() {
         super.onPause()
@@ -159,23 +160,23 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
         } else {
             text = "Group has been formed"
             Log.e("WFDManager", "group is formed")
-            //val className = groupInfo.networkName
-            //findViewById<TextView>(R.id.tvClassName).text = className
-            classText = groupInfo.networkName
+            val className = groupInfo.networkName
+            findViewById<TextView>(R.id.tvClassName).text = className
+            //classText = groupInfo.networkName
             chatListAdapter?.setGroupInfo(groupInfo)
         }
 
-        if (groupInfo == null){
+        /*if (groupInfo == null){
             server?.close()
         } else if (groupInfo.isGroupOwner && server == null){
             server = Server(this)
             deviceIp = server!!.serverIp
-        }
+        }*/
 
         var toast = Toast.makeText(this, text , Toast.LENGTH_SHORT)
         toast.show()
         wfdHasConnection = groupInfo != null
-        //updateUI()
+        updateUI()
     }
 
     override fun onDeviceStatusChanged(thisDevice: WifiP2pDevice) {
@@ -227,11 +228,5 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
     fun goToSettings(view: View) {
         val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS)
         startActivity(intent)
-    }
-
-    // just to see how chat screen displays
-    fun test(){
-        wfdHasConnection = true
-        updateUI()
     }
 }
