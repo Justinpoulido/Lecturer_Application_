@@ -26,20 +26,20 @@ class WifiDirectManager(
     @SuppressLint("MissingPermission")
     override fun onReceive(context: Context, intent: Intent) {
         when (intent.action) {
+
             WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION -> {
                 val state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1)
                 val isWifiP2pEnabled = state == WifiP2pManager.WIFI_P2P_STATE_ENABLED
                 wfdHandler.onWiFiDirectStateChanged(isWifiP2pEnabled)
-                Log.e("WFDManager","The WiFi direct adapter state has changed to $isWifiP2pEnabled")
+                Log.d("WFDManager","The WiFi direct adapter state has changed to $isWifiP2pEnabled")
             }
 
             WifiP2pManager.WIFI_P2P_PEERS_CHANGED_ACTION -> {
                 manager.requestPeers(channel) { peers: WifiP2pDeviceList? ->
-                    peers?.deviceList?.let { wfdHandler.onPeerListUpdated(it) }
-                    Log.e("WFDManager","The peer listing has changed")
+                    peers?.deviceList?.let {}
+                    Log.d("WFDManager","The peer listing has changed")
                 }
             }
-
 
             WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> {
                 val wifiP2pInfo = when {
@@ -55,26 +55,18 @@ class WifiDirectManager(
 
                 if (groupInfo != tmpGroupInfo) {
                     groupInfo = tmpGroupInfo
-                    Log.e("WFDManager", "The group status has changed")
+                    Log.d("WFDManager", "The group status has changed")
                     wfdHandler.onGroupStatusChanged(groupInfo,wifiP2pInfo)
                 }
 
                 if (groupInfo != null) {
                     if (groupInfo!!.clientList.isNotEmpty()) {
                         wfdHandler.onConnectedListUpdated(groupInfo!!.clientList)
-                        Log.e("WFDManager", "The group has devices")
+                        Log.d("WFDManager", "The group has devices")
                     }
                     wfdHandler.onConnectedListUpdated(groupInfo!!.clientList)
                 }
-
-                /*if (tmpGroupInfo == null){
-                    //Log.e("WFDManager", "no group connection established")
-                    wfdHandler.onGroupStatusChanged(groupInfo,wifiP2pInfo)
-                }*/
-
-
             }
-
 
             WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION -> {
                 val thisDevice = when{

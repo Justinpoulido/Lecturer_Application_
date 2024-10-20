@@ -33,29 +33,27 @@ import com.example.lecturerapplication.models.ChatContentModel
 import com.example.lecturerapplication.network.NetworkMessageInterface
 import com.example.lecturerapplication.network.Server
 import kotlin.concurrent.thread
-import org.w3c.dom.Text
-import java.net.Inet4Address
-import java.net.NetworkInterface
-import java.net.SocketException
 
 class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkMessageInterface {
     private var wfdManager: WifiDirectManager? = null
     private var peerListAdapter:PeerListAdapter? = null
     private var chatListAdapter:ChatListAdapter? = null
-    private var server: Server? = null
 
     private var wfdAdapterEnabled = false
     private var wfdHasConnection = false
     private var hasAttendees = false
     private var hasDevices = false
-    private lateinit var attendeesView: RecyclerView
-    private lateinit var chatView : RecyclerView
-
-    private var deviceIp : String = " "
-    private var studentID : String = ""
 
     private lateinit var btnStartClass : Button
     private lateinit var btnEndCurrentClass : Button
+    private lateinit var attendeesView: RecyclerView
+    private lateinit var chatView : RecyclerView
+
+    private var server: Server? = null
+    private var deviceIp : String = ""
+    private var studentID : String = ""
+    private var selectedPeerIp: String = ""
+    val studentList: List<String> = listOf("816117992", "816001001", "816001002", "816001003", "81600104", "816001005", "816001006")
 
     private val intentFilter = IntentFilter().apply {
         addAction(WifiP2pManager.WIFI_P2P_STATE_CHANGED_ACTION)
@@ -69,14 +67,12 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
         enableEdgeToEdge()
         setContentView(R.layout.activity_communication)
 
-
         btnStartClass = findViewById(R.id.btnStartClass)
         btnStartClass.setOnClickListener { view ->
             startClass(view)
         }
 
         btnEndCurrentClass = findViewById(R.id.btnEndCurrentClass)
-
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -90,7 +86,9 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
 
 
         attendeesView = findViewById(R.id.rvAttendees)
-        peerListAdapter = PeerListAdapter()
+        peerListAdapter = PeerListAdapter { selectedPeer ->
+            showPeerChat(selectedPeer)
+        }
         attendeesView.adapter = peerListAdapter
         attendeesView.layoutManager = LinearLayoutManager(this)
 
@@ -106,6 +104,13 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
 
     fun endClass(view: View) {
         wfdManager?.disconnect()
+        peerListAdapter = PeerListAdapter { selectedPeer ->
+            showPeerChat(selectedPeer)
+        }
+        attendeesView.adapter = peerListAdapter
+        chatListAdapter = ChatListAdapter()
+        chatView.adapter = chatListAdapter
+        findViewById<TextView>(R.id.tvStudentNumber).text = ""
     }
 
     override fun onResume() {
@@ -115,16 +120,11 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
         }
     }
 
-
     override fun onPause() {
         super.onPause()
         wfdManager?.also {
             unregisterReceiver(it)
         }
-    }
-
-    fun discoverNearbyPeers(view: View) {
-        wfdManager?.discoverPeers()
     }
 
     override fun onWiFiDirectStateChanged(isEnabled: Boolean) {
@@ -135,17 +135,8 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
         } else {
             "$text disabled! Try turning on the WiFi adapter"
         }
-
         val toast = Toast.makeText(this, text, Toast.LENGTH_SHORT)
         toast.show()
-        updateUI()
-    }
-
-    override fun onPeerListUpdated(deviceList: Collection<WifiP2pDevice>) {
-        val toast = Toast.makeText(this, "Updated listing of nearby WiFi Direct devices", Toast.LENGTH_SHORT)
-        toast.show()
-        hasDevices = deviceList.isNotEmpty()
-        peerListAdapter?.updateList(deviceList)
         updateUI()
     }
 
@@ -163,11 +154,8 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
 
         if (groupInfo == null){
             text = "Group is not formed"
-            //Log.e("WFDManager", "group is not formed")
-            //server?.close()
         } else {
             text = "Group has been formed"
-            //Log.e("WFDManager", "group has formed")
             val className = groupInfo.networkName
             findViewById<TextView>(R.id.tvClassName).text = className
         }
@@ -180,8 +168,6 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
         if (groupInfo == null){
             server?.close()
             server = null
-            chatListAdapter = ChatListAdapter()
-            chatView.adapter = chatListAdapter
         } else if (groupInfo.isGroupOwner && server == null){
             thread {
                 server = Server(this)
@@ -205,7 +191,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
         noAttendeesMessage.visibility = if (wfdAdapterEnabled && wfdHasConnection && !hasAttendees) View.VISIBLE else View.GONE
 
         val rvAttendees: RecyclerView= findViewById(R.id.rvAttendees)
-        rvAttendees.visibility = if (wfdAdapterEnabled && !wfdHasConnection && hasAttendees) View.VISIBLE else View.GONE
+        rvAttendees.visibility = if (wfdAdapterEnabled && wfdHasConnection && hasAttendees) View.VISIBLE else View.GONE
 
         val wfdConnectedView:ConstraintLayout = findViewById(R.id.clHasConnection)
         wfdConnectedView.visibility = if(wfdHasConnection)View.VISIBLE else View.GONE
@@ -218,15 +204,14 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
         val etString = etMessage.text.toString()
         val content = ChatContentModel(etString, "192.168.49.1")
         etMessage.text.clear()
+        queueMessage(content)
         chatListAdapter?.addItemToEnd(content)
-        /*if (client?.isAuthenticated == true) {
-            // Send encrypted message if authenticated
-            client?.sendMessageEncrypted(content)
-        } else {
-            // Send normal message (shouldn't happen after authentication, but just in case)
-            client?.sendMessage(content)
-        }*/
-        //server?.sendMessage(content)
+    }
+
+    private fun showPeerChat(peer: WifiP2pDevice) {
+        val studentNumber = peer.deviceName
+        val studentNumberView = findViewById<TextView>(R.id.tvStudentNumber)
+        studentNumberView.text = studentNumber
     }
 
     override fun onContent(content: ChatContentModel) {
@@ -234,6 +219,11 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
                 chatListAdapter?.addItemToEnd(content)
         }
     }
+
+    fun queueMessage(message: ChatContentModel) {
+        server?.messageQueue?.add(message)
+    }
+
 
     fun goToSettings(view: View) {
         val intent = Intent(Settings.ACTION_WIRELESS_SETTINGS)

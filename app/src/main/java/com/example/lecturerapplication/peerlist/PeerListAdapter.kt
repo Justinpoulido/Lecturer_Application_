@@ -9,12 +9,11 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.example.lecturerapplication.R
 
-class PeerListAdapter: RecyclerView.Adapter<PeerListAdapter.ViewHolder>() {
+class PeerListAdapter(private val onPeerSelected: (WifiP2pDevice) -> Unit) : RecyclerView.Adapter<PeerListAdapter.ViewHolder>() {
     private val peersList:MutableList<WifiP2pDevice> = mutableListOf()
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val peer: TextView = itemView.findViewById(R.id.Peer)
-        //val descriptionTextView: TextView = itemView.findViewById(R.id.descriptionTextView)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -26,13 +25,14 @@ class PeerListAdapter: RecyclerView.Adapter<PeerListAdapter.ViewHolder>() {
         val peer = peersList[position]
 
         holder.peer.text = peer.deviceName
-        //holder.descriptionTextView.text = peer.deviceAddress
+        holder.itemView.setOnClickListener {
+            onPeerSelected(peer)
+        }
     }
 
     override fun getItemCount(): Int {
         return peersList.size
     }
-
 
     @SuppressLint("NotifyDataSetChanged")
     fun updateList(newPeersList:Collection<WifiP2pDevice>){
