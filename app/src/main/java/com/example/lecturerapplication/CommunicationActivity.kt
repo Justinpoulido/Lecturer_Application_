@@ -34,6 +34,9 @@ import com.example.lecturerapplication.network.NetworkMessageInterface
 import com.example.lecturerapplication.network.Server
 import kotlin.concurrent.thread
 import org.w3c.dom.Text
+import java.net.Inet4Address
+import java.net.NetworkInterface
+import java.net.SocketException
 
 class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkMessageInterface {
     private var wfdManager: WifiDirectManager? = null
@@ -167,24 +170,23 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
             //Log.e("WFDManager", "group has formed")
             val className = groupInfo.networkName
             findViewById<TextView>(R.id.tvClassName).text = className
-            chatListAdapter?.setGroupInfo(groupInfo)
         }
-
-        /*if (groupInfo == null){
-                server?.close()
-                server = null
-        } else if (groupInfo.isGroupOwner && server == null){
-            thread {
-                server = Server(this)
-                deviceIp = server!!.serverIp
-                Log.d("WFDManager", deviceIp)
-            }
-        }*/
 
         var toast = Toast.makeText(this, text , Toast.LENGTH_SHORT)
         toast.show()
         wfdHasConnection = groupInfo != null
         updateUI()
+
+        if (groupInfo == null){
+            server?.close()
+            server = null
+            chatListAdapter = ChatListAdapter()
+            chatView.adapter = chatListAdapter
+        } else if (groupInfo.isGroupOwner && server == null){
+            thread {
+                server = Server(this)
+            }
+        }
     }
 
     override fun onDeviceStatusChanged(thisDevice: WifiP2pDevice) {
@@ -214,7 +216,7 @@ class CommunicationActivity : AppCompatActivity(), WifiDirectInterface, NetworkM
     fun sendMessage(view: View) {
         val etMessage:EditText = findViewById(R.id.etMessage)
         val etString = etMessage.text.toString()
-        val content = ChatContentModel(etString, deviceIp)
+        val content = ChatContentModel(etString, "192.168.49.1")
         etMessage.text.clear()
         chatListAdapter?.addItemToEnd(content)
         /*if (client?.isAuthenticated == true) {

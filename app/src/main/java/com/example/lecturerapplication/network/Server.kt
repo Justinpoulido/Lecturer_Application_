@@ -17,55 +17,44 @@ class Server (
 
 
     companion object {
-        const val PORT: Int = 10009
+        const val PORT: Int = 9999
     }
-    var serverIp: String = getLocalIpAddress()
-    private var svrSocket: ServerSocket = ServerSocket(PORT, 0, InetAddress.getByName(serverIp))
+    //var serverIp: String = getLocalIpAddress()
+    //private var svrSocket: ServerSocket = ServerSocket(PORT, 0, InetAddress.getByName("192.168.49.1"))
+    private var svrSocket: ServerSocket? = null
     private var clientMap: HashMap<String, Socket> = HashMap()
-    private val serverThread: Thread
-
-    /*init {
-        Log.e("WFDManager", "Server initialized on IP: $serverIp, Port: $PORT")
-        thread {
-            while (true) {
-                try {
-                    Log.e("WFDManager", "Waiting for client connection...")
-                    val clientConnectionSocket = svrSocket.accept()
-                    Log.e("WFDManager", "The server has accepted a connection from: ${clientConnectionSocket.inetAddress.hostAddress}")
-
-                    // Handle the new client connection
-                    handleSocket(clientConnectionSocket)
-
-                } catch (e: Exception) {
-                    Log.e("WFDManager", "An error has occurred in the server while accepting connections: ${e.message}")
-                    e.printStackTrace()
-                }
-            }
-        }
-    }*/
+    private var isRunning: Boolean = true
+    //private val serverThread: Thread
 
     init {
-        // Initialize and start the server thread
-        serverThread = thread {
-            while (!svrSocket.isClosed) {
-                try {
-                    Log.e("WFDManager", "Waiting for client connection...")
-                    // This line will block until a client connects or the socket is closed
-                    val clientConnectionSocket = svrSocket.accept()
-                    Log.e("WFDManager", "The server has accepted a connection from: ${clientConnectionSocket.inetAddress.hostAddress}")
-                    // Handle the new client connection
-                    handleSocket(clientConnectionSocket)
+        try {
+            svrSocket = ServerSocket(PORT, 0, InetAddress.getByName("192.168.49.1"))
+            Log.d("SERVER", "Server initialized on Port: $PORT")
 
-                } catch (e: SocketException) {
-                    if (svrSocket.isClosed) {
-                        Log.e("WFDManager", "Server socket closed.")
-                    } else {
-                        Log.e("WFDManager", "An error has occurred in the server while accepting connections: ${e.message}")
+            // Start a thread to accept client connections
+            thread {
+                while (isRunning) {
+                    try {
+                        Log.d("SERVER", "Waiting for client connection...")
+                        // Attempt to accept a connection
+                        val clientConnectionSocket = svrSocket?.accept() // Blocking call
+                        Log.e("SERVER", "The server has accepted a connection: ${clientConnectionSocket?.inetAddress?.hostAddress}")
+                        clientConnectionSocket?.let { handleSocket(it) }
+                    } catch (e: SocketException) {
+                        // This occurs when the socket is closed
+                        if (!isRunning) {
+                            Log.d("SERVER", "Server socket closed, exiting accept loop.")
+                        } else {
+                            Log.e("SERVER", "SocketException while accepting: ${e.message}")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("SERVER", "An error has occurred in the server: ${e.message}")
                     }
-                } catch (e: Exception) {
-                    Log.e("WFDManager", "An unexpected error has occurred: ${e.message}")
                 }
+                Log.d("SERVER", "Server thread exiting.")
             }
+        } catch (e: Exception) {
+            Log.e("SERVER", "Server initialization failed: ${e.message}")
         }
     }
 
@@ -108,18 +97,6 @@ class Server (
                         if (receivedJson!= null){
                             Log.e("SERVER", "Received a message from client $it")
                             val clientContent = Gson().fromJson(receivedJson, ChatContentModel::class.java)
-
-                            /*val reversedContent = ChatContentModel(clientContent.message.reversed(), serverIp)
-                            val reversedContentStr = Gson().toJson(reversedContent)
-                            clientWriter.write("$reversedContentStr\n")
-                            clientWriter.flush()
-                            // To show the correct alignment of the items (on the server), I'd swap the IP that it came from the client
-                            // This is some OP hax that gets the job done but is not the best way of getting it done.
-                            val tmpIp = clientContent.senderIp
-                            clientContent.senderIp = reversedContent.senderIp
-                            reversedContent.senderIp = tmpIp
-                            networkMessageInterface.onContent(reversedContent)*/
-
                             networkMessageInterface.onContent(clientContent)
                         }
                     } catch (e: Exception){
@@ -131,34 +108,14 @@ class Server (
         }
     }
 
-    fun close(){
-        svrSocket.close()
-        clientMap.clear()
-    }
-
-    fun getLocalIpAddress(): String {
+    fun close() {
         try {
-            // Get all network interfaces
-            val interfaces = NetworkInterface.getNetworkInterfaces()
-            while (interfaces.hasMoreElements()) {
-                val networkInterface = interfaces.nextElement()
-
-                // Filter out loopback and inactive interfaces
-                if (!networkInterface.isLoopback && networkInterface.isUp) {
-                    val addresses = networkInterface.inetAddresses
-                    while (addresses.hasMoreElements()) {
-                        val address = addresses.nextElement()
-                        // Check for IPv4 address
-                        if (address is Inet4Address) {
-                            return address.hostAddress
-                        }
-                    }
-                }
-            }
-        } catch (e: SocketException) {
+            isRunning = false  // Set the flag to stop the loop
+            svrSocket?.close()  // Close the ServerSocket
+            Log.d("WFDManager", "Server has been closed.")
+        } catch (e: Exception) {
+            Log.e("WFDManager", "Error occurred while closing the server: ${e.message}")
             e.printStackTrace()
         }
-        return "0.0.0.0" // Default value if no IP found
     }
-
 }

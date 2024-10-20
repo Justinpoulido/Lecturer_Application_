@@ -17,7 +17,6 @@ import com.example.lecturerapplication.peerlist.PeerListAdapter
 
 class ChatListAdapter: RecyclerView.Adapter<ChatListAdapter.ViewHolder>() {
     private val chatList:MutableList<ChatContentModel> = mutableListOf()
-    private var groupInfo: WifiP2pGroup? = null
 
     class ViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         val messageView: TextView = itemView.findViewById(R.id.tvMessage)
@@ -29,7 +28,7 @@ class ChatListAdapter: RecyclerView.Adapter<ChatListAdapter.ViewHolder>() {
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val chat = chatList[position]
-        (holder.messageView.parent as RelativeLayout).gravity = if (chat.senderIp==groupInfo?.owner?.deviceAddress) Gravity.START else Gravity.END
+        (holder.messageView.parent as RelativeLayout).gravity = if (chat.senderIp=="192.168.49.1") Gravity.START else Gravity.END
         holder.messageView.text = chat.message
     }
 
@@ -41,10 +40,4 @@ class ChatListAdapter: RecyclerView.Adapter<ChatListAdapter.ViewHolder>() {
         chatList.add(contentModel)
         notifyItemInserted(chatList.size)
     }
-
-    fun setGroupInfo(groupInfo: WifiP2pGroup?) {
-        this.groupInfo = groupInfo
-        notifyDataSetChanged() // Refresh the list if necessary
-    }
-
 }
